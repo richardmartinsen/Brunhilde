@@ -70,6 +70,7 @@ namespace CSHttpClientSample
             {
                 Console.Out.WriteLine($"Nå skal vi sende {req.score}");
                 await SendToAnalytic(publishClient, req.score.ToString());
+
             }
 
             await publishClient.CloseAsync();
