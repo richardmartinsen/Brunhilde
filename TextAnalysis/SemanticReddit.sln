@@ -7,10 +7,6 @@ Project("{A07B5EB6-E848-4116-A8D0-A826331D98C6}") = "SemanticReddit", "SemanticR
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StatefulSemanticReddit", "StatefulSemanticReddit\StatefulSemanticReddit.csproj", "{D225B6C0-A74B-44C0-BB02-3C4D968B9A16}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticRedditCore", "SemanticRedditCore\SemanticRedditCore.csproj", "{06C30204-5221-4790-A2B0-936B1B994F82}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brunhilde.Reddit", "Brunhilde.Reddit\Brunhilde.Reddit.csproj", "{9B4A1A63-1CE4-42DD-8608-22E647ADBA09}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,20 +29,6 @@ Global
 		{D225B6C0-A74B-44C0-BB02-3C4D968B9A16}.Release|Any CPU.ActiveCfg = Release|x64
 		{D225B6C0-A74B-44C0-BB02-3C4D968B9A16}.Release|x64.ActiveCfg = Release|x64
 		{D225B6C0-A74B-44C0-BB02-3C4D968B9A16}.Release|x64.Build.0 = Release|x64
-		{06C30204-5221-4790-A2B0-936B1B994F82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{06C30204-5221-4790-A2B0-936B1B994F82}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{06C30204-5221-4790-A2B0-936B1B994F82}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{06C30204-5221-4790-A2B0-936B1B994F82}.Debug|x64.Build.0 = Debug|Any CPU
-		{06C30204-5221-4790-A2B0-936B1B994F82}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{06C30204-5221-4790-A2B0-936B1B994F82}.Release|Any CPU.Build.0 = Release|Any CPU
-		{06C30204-5221-4790-A2B0-936B1B994F82}.Release|x64.ActiveCfg = Release|Any CPU
-		{06C30204-5221-4790-A2B0-936B1B994F82}.Release|x64.Build.0 = Release|Any CPU
-		{9B4A1A63-1CE4-42DD-8608-22E647ADBA09}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{9B4A1A63-1CE4-42DD-8608-22E647ADBA09}.Debug|x64.ActiveCfg = Debug|x64
-		{9B4A1A63-1CE4-42DD-8608-22E647ADBA09}.Debug|x64.Build.0 = Debug|x64
-		{9B4A1A63-1CE4-42DD-8608-22E647ADBA09}.Release|Any CPU.ActiveCfg = Release|x64
-		{9B4A1A63-1CE4-42DD-8608-22E647ADBA09}.Release|x64.ActiveCfg = Release|x64
-		{9B4A1A63-1CE4-42DD-8608-22E647ADBA09}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

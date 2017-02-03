@@ -1,8 +1,8 @@
 using Newtonsoft.Json;
 
-namespace SemanticRedditCore.Domain
+namespace StatefulSemanticReddit.Domain
 {
-    public class SentimentQueryDocument
+    public class QueryDocument
     {
         [JsonProperty("language")]
         public string Language { get; set; }
