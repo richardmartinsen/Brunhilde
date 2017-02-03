@@ -29,6 +29,7 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Brunhilde.Reddit\Brunhilde.Reddit.csproj" />
     <ProjectReference Include="..\StatefulSemanticReddit\StatefulSemanticReddit.csproj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
