@@ -57,7 +57,6 @@ namespace CSHttpClientSample
 
             Console.WriteLine("Hit ENTER to exit...");
             Console.ReadLine();
-            
         }
 
 
