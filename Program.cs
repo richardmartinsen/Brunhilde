@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
@@ -7,6 +9,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Brunhilde.Domain;
 using Brunhilde.EventInput;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Microsoft.ServiceBus.Messaging;
 
@@ -14,17 +17,38 @@ namespace CSHttpClientSample
 {
     static class Program
     {
-        private const string EhConnectionString = "Endpoint=sb://dev-brunhilde.servicebus.windows.net/;SharedAccessKeyName=reddit;SharedAccessKey=de0fz35s+6BQ0HmYmqf4lUI8R+EsmKxZrLkCaA2O7E4=";
-        private const string EhAnalyticPath = "analytics";
-        private const string EhCommentPath = "reddit-comments";
-        private const string StorageContainerName = "{Storage account container name}";
-        private const string StorageAccountName = "{Storage account name}";
-        private const string StorageAccountKey = "{Storage account key}";
-        private static readonly string StorageConnectionString = $"DefaultEndpointsProtocol=https;AccountName={StorageAccountName};AccountKey={StorageAccountKey}";
-        private const string OffsetFileName = @".\offset.txt";
+        private static string OcpApimSubscriptionKey;
+        private static string EhConnectionString;
+        private static string EhAnalyticPath = "analytics";
+        private static string EhCommentPath = "reddit-comments";
+        private static string StorageContainerName;
+        private static string StorageAccountName;
+        private static string StorageAccountKey;
+        private static string StorageConnectionString = $"DefaultEndpointsProtocol=https;AccountName={StorageAccountName};AccountKey={StorageAccountKey}";
+        private static string OffsetFileName;
+        public static IConfigurationRoot Configuration { get; set; }
 
         public static void Main()
         {
+            IConfigurationBuilder builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json");
+
+            if (Debugger.IsAttached)
+            {
+                // For more details on using the user secret store see http://go.microsoft.com/fwlink/?LinkID=532709
+                builder.AddUserSecrets();
+            }
+
+            Configuration = builder.Build();
+
+            OcpApimSubscriptionKey = Configuration["OcpApimSubscriptionKey"];
+            EhConnectionString = Configuration[nameof(EhConnectionString)];
+            StorageContainerName = Configuration[nameof(StorageContainerName)];
+            StorageAccountName = Configuration[nameof(StorageAccountName)];
+            StorageAccountKey = Configuration[nameof(StorageAccountKey)];
+            OffsetFileName = Configuration[nameof(OffsetFileName)];
+
             EventReader reader = new EventReader(EhConnectionString, EhCommentPath, OffsetFileName);
 
             IEnumerable<RedditComment> comments = reader.GetComments("$Default", "1", DateTime.MinValue);
@@ -57,14 +81,14 @@ namespace CSHttpClientSample
             HttpClient client = new HttpClient();
 
             // Request headers
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "bdd4428c00ab4b1095e904cb6b8a8ea2");
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", OcpApimSubscriptionKey);
 
             // Request parameters
             string uri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment";
 
             //Send request
             List<SentimentQueryDocument> batch = redditCommentBatch
-                .Select(rc => new SentimentQueryDocument {Id = rc.Id, Text = rc.Comment, Language = "en"})
+                .Select(rc => new SentimentQueryDocument { Id = rc.Id, Text = rc.Comment, Language = "en" })
                 .ToList();
 
             SentimentQueryObject queryobject = new SentimentQueryObject { Documents = batch };

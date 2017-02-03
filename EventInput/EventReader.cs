@@ -27,7 +27,7 @@ namespace Brunhilde.EventInput
             {
                 textFromFile = File.ReadAllText(_offsetFileName);
             }
-            catch (Exception e)
+            catch
             {
             }
 
