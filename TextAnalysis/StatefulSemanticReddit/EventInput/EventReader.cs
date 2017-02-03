@@ -14,10 +14,17 @@ namespace StatefulSemanticReddit.EventInput
         private readonly StateHandler _stateHandler;
         private readonly EventHubClient _eventHubClient;
 
-        public EventReader(string connectionString, string commentPath, StateHandler stateHandler)
+        //public EventReader(string connectionString, string commentPath, StateHandler stateHandler)
+        //{
+        //    _stateHandler = stateHandler;
+        //    _eventHubClient = EventHubClient.CreateFromConnectionString(connectionString, commentPath);
+        //}
+
+        public EventReader(EventHubClient eventHubClient, StateHandler stateHandler)
         {
+            _eventHubClient = eventHubClient;
             _stateHandler = stateHandler;
-            _eventHubClient = EventHubClient.CreateFromConnectionString(connectionString, commentPath);
+
         }
 
         public async Task<IEnumerable<AnalysedRedditComment>> GetComments()
@@ -42,8 +49,9 @@ namespace StatefulSemanticReddit.EventInput
                 EventData eventData = eventReceiver.Receive();
 
                 await _stateHandler.SetOffset(eventData.Offset, partitionId);
-
+                await eventReceiver.CloseAsync();
                 dataRecieved.Add(eventData);
+                
             }
 
             return dataRecieved;

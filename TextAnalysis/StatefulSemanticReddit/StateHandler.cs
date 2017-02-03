@@ -20,6 +20,8 @@ namespace StatefulSemanticReddit
             IReliableDictionary<string, string> myDictionary = await _stateManager.GetOrAddAsync<IReliableDictionary<string, string>>("offsetDictionary");
 
             ConditionalValue<string> result = await myDictionary.TryGetValueAsync(_transaction, GetPartitionOffsetKey(partitionId));
+            ServiceEventSource.Current.Message("Current Counter Value: {0}",
+                        result.HasValue ? result.Value : "Value does not exist.");
 
             return result.HasValue ? result.Value : string.Empty;
         }

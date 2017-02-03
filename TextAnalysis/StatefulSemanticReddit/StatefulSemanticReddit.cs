@@ -49,21 +49,19 @@ namespace StatefulSemanticReddit
         protected override async Task RunAsync(CancellationToken cancellationToken)
         {
             IReliableDictionary<string, string> myDictionary = await StateManager.GetOrAddAsync<IReliableDictionary<string, string>>("offsetDictionary");
-
+            var eventHubClient = EventHubClient.CreateFromConnectionString(Config.EhConnectionString, Config.EhCommentPath);
+            EventHubClient publishClient = EventHubClient.CreateFromConnectionString(Config.EhConnectionString, Config.EhAnalyticPath);
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 using (ITransaction tx = StateManager.CreateTransaction())
                 {
-                    ConditionalValue<string> result = await myDictionary.TryGetValueAsync(tx, "OffsetCounter");
 
-                    ServiceEventSource.Current.ServiceMessage(Context, "Current Counter Value: {0}",
-                        result.HasValue ? result.Value : "Value does not exist.");
-
+                 
                     StateHandler stateHandler = new StateHandler(tx, StateManager);
 
-                    EventReader reader = new EventReader(Config.EhConnectionString, Config.EhCommentPath, stateHandler);
+                    EventReader reader = new EventReader(eventHubClient, stateHandler);
 
                     IEnumerable<AnalysedRedditComment> comments = await reader.GetComments();
 
@@ -79,7 +77,7 @@ namespace StatefulSemanticReddit
                         await sentimentAnalyzer.DoAnalysis(batch);
                         await keyPhraseAnalyzer.DoAnalysis(batch);
 
-                        ProcessMessages(batch.Values);
+                        ProcessMessages(batch.Values, publishClient);
                     }
 
                     // If an exception is thrown before calling CommitAsync, the transaction aborts, all changes are 
@@ -116,9 +114,10 @@ namespace StatefulSemanticReddit
             }
         }
 
-        public static async void ProcessMessages(IEnumerable<AnalysedRedditComment> comments)
+        public static async void ProcessMessages(IEnumerable<AnalysedRedditComment> comments, EventHubClient publishClient)
         {
-            EventHubClient publishClient = EventHubClient.CreateFromConnectionString(Config.EhConnectionString, Config.EhAnalyticPath);
+            //EventHubClient publishClient = EventHubClient.CreateFromConnectionString(Config.EhConnectionString, Config.EhAnalyticPath);
+            
             JsonSerializer serializer = new JsonSerializer { NullValueHandling = NullValueHandling.Ignore };
 
             foreach (AnalysedRedditComment req in comments)
@@ -134,8 +133,8 @@ namespace StatefulSemanticReddit
                 string serializedContent = sb.ToString();
                 await SendToAnalytic(publishClient, serializedContent);
             }
-
-            await publishClient.CloseAsync();
+            
+            //await publishClient.CloseAsync();
         }
 
         private static async Task SendToAnalytic(EventHubClient publishClient, string text)
