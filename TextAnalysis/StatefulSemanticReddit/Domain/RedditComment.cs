@@ -9,5 +9,7 @@ namespace StatefulSemanticReddit.Domain
         public string Comment { get; set; }
         public DateTime CreatedUTC { get; set; }
         public string Id { get; set; }
+        public string SubReddit { get; set; }
+
     }
 }

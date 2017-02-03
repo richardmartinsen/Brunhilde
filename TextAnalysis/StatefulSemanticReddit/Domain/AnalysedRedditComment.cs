@@ -14,5 +14,6 @@ namespace StatefulSemanticReddit.Domain
         public string[] KeyPhrases { get; set; }
         public float Sentiment { get; set; }
         public string Language { get; set; }
+        public string SubReddit { get; set; }
     }
 }
