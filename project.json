@@ -7,9 +7,8 @@
   "dependencies": {
     "Microsoft.AspNetCore.Http": "1.1.0",
     "Newtonsoft.Json": "9.0.1",
-    "Microsoft.Azure.EventHubs": "0.0.4-preview",
-    "Microsoft.Azure.EventHubs.Processor": "0.0.4-preview",
-    "System.Reflection.Metadata": "1.4.2"
+    "System.Reflection.Metadata": "1.4.2",
+    "WindowsAzure.ServiceBus": "3.4.5"
   },
   "frameworks": {
     "net461": {
@@ -17,5 +16,6 @@
       },
       "imports": "dnxcore50"
     }
-  }
+  },
+  "userSecretsId": "aspnet-Brunhilde-20170203012948"
 }

@@ -1,79 +1,83 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Net.Http;
-using System.Net.Sockets;
-using System.Reflection.Metadata;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using Brunhilde.Domain;
+using Brunhilde.EventInput;
 using Newtonsoft.Json;
-using Microsoft.Azure.EventHubs;
+using Microsoft.ServiceBus.Messaging;
 
 namespace CSHttpClientSample
 {
     static class Program
     {
-        private static EventHubClient eventHubClient;
-        private const string EhConnectionString = "Endpoint=sb://dev-brunhilde.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=jfHBVw0tKFzbyhlgQjV25RQRfRfCPOiy+/1zPhEuYiI=";
+        private const string EhConnectionString = "Endpoint=sb://dev-brunhilde.servicebus.windows.net/;SharedAccessKeyName=reddit;SharedAccessKey=de0fz35s+6BQ0HmYmqf4lUI8R+EsmKxZrLkCaA2O7E4=";
         private const string EhAnalyticPath = "analytics";
         private const string EhCommentPath = "reddit-comments";
         private const string StorageContainerName = "{Storage account container name}";
         private const string StorageAccountName = "{Storage account name}";
         private const string StorageAccountKey = "{Storage account key}";
-        private static readonly string StorageConnectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}", StorageAccountName, StorageAccountKey);
+        private static readonly string StorageConnectionString = $"DefaultEndpointsProtocol=https;AccountName={StorageAccountName};AccountKey={StorageAccountKey}";
+        private const string OffsetFileName = @".\offset.txt";
 
         public static void Main()
         {
-            var connectionStringBuilder = new EventHubsConnectionStringBuilder(EhConnectionString)
-            {
-                EntityPath = EhAnalyticPath
-            };
+            EventReader reader = new EventReader(EhConnectionString, EhCommentPath, OffsetFileName);
 
-            eventHubClient = EventHubClient.CreateFromConnectionString(connectionStringBuilder.ToString());
+            IEnumerable<RedditComment> comments = reader.GetComments("$Default", "1", DateTime.MinValue);
 
-            ProcessMessages();
+            ProcessMessages(comments);
+
             Console.WriteLine("Hit ENTER to exit...");
             Console.ReadLine();
+
         }
 
 
-        public static async void ProcessMessages()
+        public static async void ProcessMessages(IEnumerable<RedditComment> comments)
         {
-            Task<SentimentResponseObject> makeRequest = MakeRequest();
-            foreach (var req in makeRequest.Result.documents)
+            EventHubClient publishClient = EventHubClient.CreateFromConnectionString(EhConnectionString, EhAnalyticPath);
+
+            Task<SentimentResponseObject> makeRequest = MakeRequest(comments.Take(5).ToArray());
+            foreach (Document req in makeRequest.Result.documents)
             {
-                Console.Out.WriteLine("Nå skal vi sende " + req.score.ToString());
-                await SendToAnalytic(req.score.ToString());
+                Console.Out.WriteLine($"Nå skal vi sende {req.score}");
+                await SendToAnalytic(publishClient, req.score.ToString());
             }
+
+            await publishClient.CloseAsync();
         }
 
-        static async Task<SentimentResponseObject> MakeRequest()
+        static async Task<SentimentResponseObject> MakeRequest(RedditComment[] redditCommentBatch)
         {
-            var client = new HttpClient();
+            HttpClient client = new HttpClient();
 
             // Request headers
             client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "bdd4428c00ab4b1095e904cb6b8a8ea2");
 
             // Request parameters
-            var uri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment";
+            string uri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment";
 
             //Send request
-            var doc = new SentimentQueryDocument { Language = "en", Id = "1234", Text = "this is super happy" };
-            var doc2 = new SentimentQueryDocument { Language = "en", Id = "2345", Text = "this is crap" };
-            var queryobject = new SentimentQueryObject { Documents = new List<SentimentQueryDocument> { doc, doc2 } };
-            var content = new StringContent(JsonConvert.SerializeObject(queryobject));
+            List<SentimentQueryDocument> batch = redditCommentBatch
+                .Select(rc => new SentimentQueryDocument {Id = rc.Id, Text = rc.Comment, Language = "en"})
+                .ToList();
+
+            SentimentQueryObject queryobject = new SentimentQueryObject { Documents = batch };
+            StringContent content = new StringContent(JsonConvert.SerializeObject(queryobject));
             content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 
             //Get answer
-            var response = await client.PostAsync(uri, content);
+            HttpResponseMessage response = await client.PostAsync(uri, content);
             string jsonResponse = await response.Content.ReadAsStringAsync();
-            var resp = JsonConvert.DeserializeObject<SentimentResponseObject>(jsonResponse);
+            SentimentResponseObject resp = JsonConvert.DeserializeObject<SentimentResponseObject>(jsonResponse);
             return resp;
         }
 
-        private static async Task SendToAnalytic(string text)
+        private static async Task SendToAnalytic(EventHubClient publishClient, string text)
         {
             // Creates an EventHubsConnectionStringBuilder object from a the connection string, and sets the EntityPath.
             // Typically the connection string should have the Entity Path in it, but for the sake of this simple scenario
@@ -81,9 +85,7 @@ namespace CSHttpClientSample
 
 
             //await SendMessagesToEventHub(100);
-            await eventHubClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(text)));
-
-            await eventHubClient.CloseAsync();
+            await publishClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(text)));
         }
 
     }
