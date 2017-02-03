@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace CSHttpClientSample
+namespace SemanticRedditCore.Domain
 {
     public class SentimentQueryObject
     {

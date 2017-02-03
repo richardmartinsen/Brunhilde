@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace CSHttpClientSample
+namespace SemanticRedditCore.Domain
 {
     public class SentimentQueryDocument
     {

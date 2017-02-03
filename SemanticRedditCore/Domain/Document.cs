@@ -1,4 +1,4 @@
-﻿namespace CSHttpClientSample
+﻿namespace SemanticRedditCore.Domain
 {
     public class Document
     {

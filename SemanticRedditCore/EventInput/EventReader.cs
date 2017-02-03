@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Brunhilde.Domain;
 using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
+using SemanticRedditCore.Domain;
 
-namespace Brunhilde.EventInput
+namespace SemanticRedditCore.EventInput
 {
     public sealed class EventReader
     {

@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Net.Http;
 using System.Threading.Tasks;
-using Brunhilde.Domain;
-using Brunhilde.EventInput;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
+using Microsoft.Azure;
 using Microsoft.ServiceBus.Messaging;
+using Newtonsoft.Json;
+using SemanticRedditCore.Domain;
+using SemanticRedditCore.EventInput;
 
-namespace CSHttpClientSample
+namespace SemanticRedditCore
 {
     static class Program
     {
@@ -26,28 +26,15 @@ namespace CSHttpClientSample
         private static string StorageAccountKey;
         private static string StorageConnectionString = $"DefaultEndpointsProtocol=https;AccountName={StorageAccountName};AccountKey={StorageAccountKey}";
         private static string OffsetFileName;
-        public static IConfigurationRoot Configuration { get; set; }
 
         public static void Main()
         {
-            IConfigurationBuilder builder = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json");
-
-            if (Debugger.IsAttached)
-            {
-                // For more details on using the user secret store see http://go.microsoft.com/fwlink/?LinkID=532709
-                builder.AddUserSecrets();
-            }
-
-            Configuration = builder.Build();
-
-            OcpApimSubscriptionKey = Configuration["OcpApimSubscriptionKey"];
-            EhConnectionString = Configuration[nameof(EhConnectionString)];
-            StorageContainerName = Configuration[nameof(StorageContainerName)];
-            StorageAccountName = Configuration[nameof(StorageAccountName)];
-            StorageAccountKey = Configuration[nameof(StorageAccountKey)];
-            OffsetFileName = Configuration[nameof(OffsetFileName)];
+            OcpApimSubscriptionKey = CloudConfigurationManager.GetSetting("OcpApimSubscriptionKey");
+            EhConnectionString = CloudConfigurationManager.GetSetting(nameof(EhConnectionString));
+            StorageContainerName = CloudConfigurationManager.GetSetting(nameof(StorageContainerName));
+            StorageAccountName = CloudConfigurationManager.GetSetting(nameof(StorageAccountName));
+            StorageAccountKey = CloudConfigurationManager.GetSetting(nameof(StorageAccountKey));
+            OffsetFileName = CloudConfigurationManager.GetSetting(nameof(OffsetFileName));
 
             EventReader reader = new EventReader(EhConnectionString, EhCommentPath, OffsetFileName);
 
