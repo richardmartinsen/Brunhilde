@@ -92,10 +92,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config.cs" />
+    <Compile Include="Domain\Document.cs" />
+    <Compile Include="Domain\RedditComment.cs" />
+    <Compile Include="Domain\SentimentQueryDocument.cs" />
+    <Compile Include="Domain\SentimentQueryObject.cs" />
+    <Compile Include="Domain\SentimentResponseObject.cs" />
+    <Compile Include="EventInput\EventhubClient.cs" />
+    <Compile Include="EventInput\EventReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StatefulSemanticReddit.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ServiceEventSource.cs" />
+    <Compile Include="StateHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PackageRoot\Config\Settings.xml" />
@@ -105,12 +114,7 @@
     </None>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SemanticRedditCore\SemanticRedditCore.csproj">
-      <Project>{06C30204-5221-4790-A2B0-936B1B994F82}</Project>
-      <Name>SemanticRedditCore</Name>
-    </ProjectReference>
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
