@@ -1,6 +1,6 @@
 ﻿using Microsoft.Azure;
 
-namespace SemanticRedditCore
+namespace StatefulSemanticReddit
 {
     public static class Config
     {

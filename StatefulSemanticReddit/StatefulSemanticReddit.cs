@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Fabric;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,8 +12,8 @@ using Microsoft.ServiceFabric.Data.Collections;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Newtonsoft.Json;
-using SemanticRedditCore;
-using SemanticRedditCore.Domain;
+using StatefulSemanticReddit.Analysis;
+using StatefulSemanticReddit.Domain;
 using StatefulSemanticReddit.EventInput;
 
 namespace StatefulSemanticReddit
@@ -24,6 +23,8 @@ namespace StatefulSemanticReddit
     /// </summary>
     internal sealed class StatefulSemanticReddit : StatefulService
     {
+        private const int BatchSize = 900;
+        private const int PullDelay = 5;
         public StatefulSemanticReddit(StatefulServiceContext context)
             : base(context)
         { }
@@ -64,68 +65,81 @@ namespace StatefulSemanticReddit
 
                     EventReader reader = new EventReader(Config.EhConnectionString, Config.EhCommentPath, stateHandler);
 
-                    IEnumerable<RedditComment> comments = await reader.GetComments("$Default", "1");
+                    IEnumerable<AnalysedRedditComment> comments = await reader.GetComments();
 
-                    ProcessMessages(comments);
+                    IEnumerable<IReadOnlyDictionary<string, AnalysedRedditComment>> batches = BatchComments(comments, BatchSize);
+
+                    foreach (IReadOnlyDictionary<string, AnalysedRedditComment> batch in batches)
+                    {
+                        LanguageAnalyzer languageAnalyzer = new LanguageAnalyzer();
+                        SentimentAnalyzer sentimentAnalyzer = new SentimentAnalyzer();
+                        KeyPhraseAnalyzer keyPhraseAnalyzer = new KeyPhraseAnalyzer();
+
+                        await languageAnalyzer.DoAnalysis(batch); // do language analysis first
+                        await sentimentAnalyzer.DoAnalysis(batch);
+                        await keyPhraseAnalyzer.DoAnalysis(batch);
+
+                        ProcessMessages(batch.Values);
+                    }
 
                     // If an exception is thrown before calling CommitAsync, the transaction aborts, all changes are 
                     // discarded, and nothing is saved to the secondary replicas.
                     await tx.CommitAsync();
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(PullDelay), cancellationToken);
+            }
+            // ReSharper disable once FunctionNeverReturns
+        }
+
+        private IEnumerable<IReadOnlyDictionary<string, AnalysedRedditComment>> BatchComments(IEnumerable<AnalysedRedditComment> comments, int batchSize)
+        {
+            using (IEnumerator<AnalysedRedditComment> enumerator = comments.GetEnumerator())
+            {
+                int currentCount = 0;
+                Dictionary<string, AnalysedRedditComment> commentDictionary = new Dictionary<string, AnalysedRedditComment>();
+
+                while (enumerator.MoveNext())
+                {
+                    currentCount++;
+                    commentDictionary.Add(enumerator.Current.Id, enumerator.Current);
+
+                    if (currentCount < batchSize)
+                        continue;
+
+                    currentCount = 0;
+                    yield return new ReadOnlyDictionary<string, AnalysedRedditComment>(commentDictionary);
+                }
+
+                if(currentCount > 0)
+                    yield return new ReadOnlyDictionary<string, AnalysedRedditComment>(commentDictionary);
             }
         }
 
-        public static async void ProcessMessages(IEnumerable<RedditComment> comments)
+        public static async void ProcessMessages(IEnumerable<AnalysedRedditComment> comments)
         {
             EventHubClient publishClient = EventHubClient.CreateFromConnectionString(Config.EhConnectionString, Config.EhAnalyticPath);
+            JsonSerializer serializer = new JsonSerializer { NullValueHandling = NullValueHandling.Ignore };
 
-            Task<SentimentResponseObject> makeRequest = MakeRequest(comments.Take(5).ToArray());
-            foreach (Document req in makeRequest.Result.documents)
+            foreach (AnalysedRedditComment req in comments)
             {
-                Console.Out.WriteLine($"Nå skal vi sende {req.score}");
-                await SendToAnalytic(publishClient, req.score.ToString());
+                StringBuilder sb = new StringBuilder();
 
+                using (StringWriter sw = new StringWriter(sb))
+                using (JsonWriter writer = new JsonTextWriter(sw))
+                {
+                    serializer.Serialize(writer, req);
+                }
+
+                string serializedContent = sb.ToString();
+                await SendToAnalytic(publishClient, serializedContent);
             }
 
             await publishClient.CloseAsync();
         }
 
-        static async Task<SentimentResponseObject> MakeRequest(RedditComment[] redditCommentBatch)
-        {
-            HttpClient client = new HttpClient();
-
-            // Request headers
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", Config.OcpApimSubscriptionKey);
-
-            // Request parameters
-            string uri = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment";
-
-            //Send request
-            List<SentimentQueryDocument> batch = redditCommentBatch
-                .Select(rc => new SentimentQueryDocument { Id = rc.Id, Text = rc.Comment, Language = "en" })
-                .ToList();
-
-            SentimentQueryObject queryobject = new SentimentQueryObject { Documents = batch };
-            StringContent content = new StringContent(JsonConvert.SerializeObject(queryobject));
-            content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-
-            //Get answer
-            HttpResponseMessage response = await client.PostAsync(uri, content);
-            string jsonResponse = await response.Content.ReadAsStringAsync();
-            SentimentResponseObject resp = JsonConvert.DeserializeObject<SentimentResponseObject>(jsonResponse);
-            return resp;
-        }
-
         private static async Task SendToAnalytic(EventHubClient publishClient, string text)
         {
-            // Creates an EventHubsConnectionStringBuilder object from a the connection string, and sets the EntityPath.
-            // Typically the connection string should have the Entity Path in it, but for the sake of this simple scenario
-            // we are using the connection string from the namespace.
-
-
-            //await SendMessagesToEventHub(100);
             await publishClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(text)));
         }
 

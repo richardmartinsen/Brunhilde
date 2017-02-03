@@ -15,20 +15,25 @@ namespace StatefulSemanticReddit
             _stateManager = stateManager;
         }
 
-        public async Task<string> GetOffset()
+        public async Task<string> GetOffset(string partitionId)
         {
             IReliableDictionary<string, string> myDictionary = await _stateManager.GetOrAddAsync<IReliableDictionary<string, string>>("offsetDictionary");
 
-            ConditionalValue<string> result = await myDictionary.TryGetValueAsync(_transaction, "OffsetCounter");
+            ConditionalValue<string> result = await myDictionary.TryGetValueAsync(_transaction, GetPartitionOffsetKey(partitionId));
 
             return result.HasValue ? result.Value : string.Empty;
         }
 
-        public async Task SetOffset(string offset)
+        public async Task SetOffset(string offset, string partitionId)
         {
             IReliableDictionary<string, string> myDictionary = await _stateManager.GetOrAddAsync<IReliableDictionary<string, string>>("offsetDictionary");
 
-            await myDictionary.AddOrUpdateAsync(_transaction, "OffsetCounter", offset, (key, value) => offset);
+            await myDictionary.AddOrUpdateAsync(_transaction, GetPartitionOffsetKey(partitionId), offset, (key, value) => offset);
+        }
+
+        private static string GetPartitionOffsetKey(string partitionId)
+        {
+            return $"{partitionId}|PartitionOffset";
         }
     }
 }

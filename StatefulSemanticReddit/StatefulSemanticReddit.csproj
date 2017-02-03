@@ -92,12 +92,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Analysis\KeyPhraseAnalyzer.cs" />
+    <Compile Include="Analysis\LanguageAnalyzer.cs" />
+    <Compile Include="Analysis\SentimentAnalyzer.cs" />
+    <Compile Include="Analysis\TextAnalyzer.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="Domain\AnalysedRedditComment.cs" />
+    <Compile Include="Domain\DetectedLanguage.cs" />
     <Compile Include="Domain\Document.cs" />
     <Compile Include="Domain\RedditComment.cs" />
-    <Compile Include="Domain\SentimentQueryDocument.cs" />
-    <Compile Include="Domain\SentimentQueryObject.cs" />
-    <Compile Include="Domain\SentimentResponseObject.cs" />
+    <Compile Include="Domain\QueryDocument.cs" />
+    <Compile Include="Domain\QueryObject.cs" />
+    <Compile Include="Domain\QueryResponseObject.cs" />
     <Compile Include="EventInput\EventhubClient.cs" />
     <Compile Include="EventInput\EventReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

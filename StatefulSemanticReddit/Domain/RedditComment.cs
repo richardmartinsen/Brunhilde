@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SemanticRedditCore.Domain
+namespace StatefulSemanticReddit.Domain
 {
     public sealed class RedditComment
     {
