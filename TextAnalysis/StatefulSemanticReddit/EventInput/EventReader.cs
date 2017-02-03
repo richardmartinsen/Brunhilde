@@ -44,7 +44,8 @@ namespace StatefulSemanticReddit.EventInput
             {
                 string partitionOffset = await _stateHandler.GetOffset(partitionId);
 
-                EventHubReceiver eventReceiver = _eventHubClient.GetDefaultConsumerGroup().CreateReceiver(partitionId, partitionOffset);
+                //EventHubReceiver eventReceiver = _eventHubClient.GetDefaultConsumerGroup().CreateReceiver(partitionId, partitionOffset);
+                EventHubReceiver eventReceiver = _eventHubClient.GetConsumerGroup("mojo").CreateReceiver(partitionId, partitionOffset);
 
                 EventData eventData = eventReceiver.Receive();
 
@@ -59,14 +60,16 @@ namespace StatefulSemanticReddit.EventInput
 
         private static IEnumerable<AnalysedRedditComment> DeserializeObjects(IEnumerable<EventData> data)
         {
+            var redditComments = new List<AnalysedRedditComment>();
             foreach (EventData d in data)
             {
                 try
                 {
                     byte[] bytes = d.GetBytes();
                     string text = Encoding.UTF8.GetString(bytes);
-                    return JsonConvert.DeserializeObject<List<RedditComment>>(text)
-                        .Select(rc => new AnalysedRedditComment { Id = rc.Id, Comment = rc.Comment, CreatedUTC = rc.CreatedUTC, UpVotes = rc.UpWotes, DownVotes = rc.DownVotes });
+                    
+                    var analysedRedditComments = JsonConvert.DeserializeObject<List<RedditComment>>(text).Select(rc => new AnalysedRedditComment { Id = rc.Id, Comment = rc.Comment, CreatedUTC = rc.CreatedUTC, UpVotes = rc.UpWotes, DownVotes = rc.DownVotes, SubReddit = rc.SubReddit});
+                    redditComments.AddRange(analysedRedditComments);
                 }
                 catch (Exception e)
                 {
@@ -74,7 +77,7 @@ namespace StatefulSemanticReddit.EventInput
                 }
             }
 
-            return Enumerable.Empty<AnalysedRedditComment>();
+            return redditComments;
         }
     }
 }

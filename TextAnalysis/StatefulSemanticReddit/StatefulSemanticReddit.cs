@@ -64,7 +64,7 @@ namespace StatefulSemanticReddit
                     EventReader reader = new EventReader(eventHubClient, stateHandler);
 
                     IEnumerable<AnalysedRedditComment> comments = await reader.GetComments();
-
+                        
                     IEnumerable<IReadOnlyDictionary<string, AnalysedRedditComment>> batches = BatchComments(comments, BatchSize);
 
                     foreach (IReadOnlyDictionary<string, AnalysedRedditComment> batch in batches)
