@@ -113,33 +113,4 @@ namespace CSHttpClientSample
         }
 
     }
-
-    public class SentimentQueryObject
-    {
-        [JsonProperty("documents")]
-        public IList<SentimentQueryDocument> Documents { get; set; }
-    }
-
-    public class SentimentQueryDocument
-    {
-        [JsonProperty("language")]
-        public string Language { get; set; }
-        [JsonProperty("id")]
-        public string Id { get; set; }
-        [JsonProperty("text")]
-        public string Text { get; set; }
-    }
-
-    public class SentimentResponseObject
-    {
-        public Document[] documents { get; set; }
-        public object[] errors { get; set; }
-    }
-
-    public class Document
-    {
-        public float score { get; set; }
-        public string id { get; set; }
-    }
-
 }
